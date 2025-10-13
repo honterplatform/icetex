@@ -43,6 +43,13 @@ def get_classifier() -> ICETEXClassifier:
     global openai_classifier
     if openai_classifier is None:
         try:
+            # Debug: Check environment variable
+            api_key = os.getenv("OPENAI_API_KEY")
+            print(f"🔍 DEBUG: OPENAI_API_KEY exists: {bool(api_key)}")
+            if api_key:
+                print(f"🔍 DEBUG: API key length: {len(api_key)}")
+                print(f"🔍 DEBUG: API key starts with: {api_key[:10]}...")
+            
             openai_classifier = ICETEXClassifier(knowledge_base=knowledge_base)
         except ValueError as e:
             raise HTTPException(
@@ -150,12 +157,18 @@ async def health_check():
     """
     Health check endpoint.
     """
-    api_key_configured = os.getenv("OPENAI_API_KEY") is not None
+    api_key = os.getenv("OPENAI_API_KEY")
+    api_key_configured = api_key is not None
     
     return {
         "status": "healthy",
         "openai_configured": api_key_configured,
-        "model": os.getenv("OPENAI_MODEL", "gpt-4-turbo")
+        "model": os.getenv("OPENAI_MODEL", "gpt-4-turbo"),
+        "debug": {
+            "api_key_exists": bool(api_key),
+            "api_key_length": len(api_key) if api_key else 0,
+            "api_key_prefix": api_key[:10] + "..." if api_key else "None"
+        }
     }
 
 
