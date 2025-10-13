@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICETEX - Administración de Base de Conocimiento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Satoshi:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            max-width: 180px;
+            height: auto;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            color: #111827;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section {
+            margin-bottom: 32px;
+            padding: 24px;
+            border-radius: 8px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .section h2 {
+            color: #111827;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d1d5db;
+        }
+
+        .status-indicator.active {
+            background: #059669;
+        }
+
+        .status-indicator.inactive {
+            background: #dc2626;
+        }
+
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 40px 24px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: white;
+        }
+
+        .upload-area:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            color: #9ca3af;
+        }
+
+        .upload-text {
+            color: #374151;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .upload-hint {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        #dependenciesFileInput {
+            display: none;
+        }
+
+        .button {
+            padding: 12px 20px;
+            background: #111827;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 8px 4px;
+        }
+
+        .button:hover {
+            background: #1f2937;
+            transform: translateY(-1px);
+        }
+
+        .button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button.danger {
+            background: #dc2626;
+        }
+
+        .button.danger:hover {
+            background: #b91c1c;
+        }
+
+        .button.secondary {
+            background: #6b7280;
+        }
+
+        .button.secondary:hover {
+            background: #4b5563;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            color: #111827;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #111827;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+            margin: 16px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            display: none;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+            border: 1px solid;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .message.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .footer a {
+            color: #6b7280;
+            text-decoration: none;
+            margin: 0 12px;
+            font-size: 14px;
+        }
+
+        .footer a:hover {
+            color: #374151;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/static/images/icetex.png" alt="ICETEX Logo" class="logo">
+            <h1>Base de Conocimiento ICETEX</h1>
+            <p class="subtitle">
+                Administre el documento de dependencias oficial para mejorar la precisión 
+                de la clasificación de peticiones.
+            </p>
+        </div>
+
+        <!-- Knowledge Base Status -->
+        <div class="section">
+            <h2>Estado de la Base de Conocimiento</h2>
+            <div class="status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Verificando estado...</span>
+            </div>
+            
+            <div class="info-grid" id="knowledgeBaseInfo" style="display: none;">
+                <div class="info-item">
+                    <div class="info-label">Documento Cargado</div>
+                    <div class="info-value" id="documentStatus">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Tamaño del Texto</div>
+                    <div class="info-value" id="textSize">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Última Actualización</div>
+                    <div class="info-value" id="lastUpdated">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Nombre del Archivo</div>
+                    <div class="info-value" id="fileName">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Document -->
+        <div class="section">
+            <h2>Subir Documento de Dependencias</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Suba el documento oficial de ICETEX que contiene información detallada 
+                sobre las responsabilidades de cada dependencia. Esto mejorará significativamente 
+                la precisión de la clasificación.
+            </p>
+
+            <div class="upload-area" id="dependenciesUploadArea">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Haga clic para seleccionar el documento de dependencias</div>
+                <div class="upload-hint">Formato PDF con información detallada de ICETEX</div>
+                <input type="file" id="dependenciesFileInput" accept=".pdf">
+            </div>
+
+            <div id="fileInfo" style="display: none; margin-top: 15px;">
+                <strong>Archivo seleccionado:</strong> <span id="selectedFileName"></span>
+            </div>
+
+            <button type="button" class="button" id="uploadButton" onclick="uploadDependencies()">
+                Subir Documento
+            </button>
+        </div>
+
+        <!-- Management Actions -->
+        <div class="section">
+            <h2>Gestión de Base de Conocimiento</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Acciones administrativas para la base de conocimiento.
+            </p>
+
+            <button type="button" class="button secondary" onclick="refreshStatus()">
+                Actualizar Estado
+            </button>
+            
+            <button type="button" class="button danger" onclick="clearKnowledgeBase()" id="clearButton" disabled>
+                Limpiar Base de Conocimiento
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Procesando documento...</p>
+        </div>
+
+        <!-- Messages -->
+        <div class="message" id="messageBox"></div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <a href="/">← Volver al Clasificador</a>
+            <a href="/docs">Documentación API</a>
+        </div>
+    </div>
+
+    <script>
+        // Load knowledge base status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+        });
+
+        // File selection
+        document.getElementById('dependenciesFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('selectedFileName').textContent = file.name;
+                document.getElementById('fileInfo').style.display = 'block';
+            }
+        });
+
+        // Click to upload
+        document.getElementById('dependenciesUploadArea').addEventListener('click', function() {
+            document.getElementById('dependenciesFileInput').click();
+        });
+
+        async function refreshStatus() {
+            try {
+                const response = await fetch('/knowledge-base');
+                const data = await response.json();
+
+                const statusIndicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                const knowledgeBaseInfo = document.getElementById('knowledgeBaseInfo');
+                const clearButton = document.getElementById('clearButton');
+
+                if (data.has_reference_document) {
+                    statusIndicator.className = 'status-indicator active';
+                    statusText.textContent = 'Base de conocimiento activa';
+                    clearButton.disabled = false;
+
+                    // Show info
+                    document.getElementById('documentStatus').textContent = 'Sí';
+                    document.getElementById('textSize').textContent = data.reference_text_length.toLocaleString() + ' caracteres';
+                    document.getElementById('lastUpdated').textContent = new Date(data.last_updated).toLocaleDateString('es-ES');
+                    document.getElementById('fileName').textContent = data.dependencies_info?.filename || 'N/A';
+
+                    knowledgeBaseInfo.style.display = 'grid';
+                } else {
+                    statusIndicator.className = 'status-indicator inactive';
+                    statusText.textContent = 'No hay documento cargado';
+                    clearButton.disabled = true;
+                    knowledgeBaseInfo.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading status:', error);
+                showMessage('Error al cargar el estado de la base de conocimiento', 'error');
+            }
+        }
+
+        async function uploadDependencies() {
+            const fileInput = document.getElementById('dependenciesFileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showMessage('Por favor seleccione un archivo PDF', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showLoading(true);
+            hideMessage();
+
+            try {
+                const response = await fetch('/upload-dependencies', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    refreshStatus();
+                    // Clear file input
+                    fileInput.value = '';
+                    document.getElementById('fileInfo').style.display = 'none';
+                } else {
+                    showMessage(data.detail || 'Error al subir el documento', 'error');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showMessage('Error al subir el documento', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function clearKnowledgeBase() {
+            if (!confirm('¿Está seguro de que desea limpiar la base de conocimiento? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            showLoading(true);
+            hideMessage();
+
+            try {
+                const response = await fetch('/knowledge-base', {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    refreshStatus();
+                } else {
+                    showMessage(data.detail || 'Error al limpiar la base de conocimiento', 'error');
+                }
+            } catch (error) {
+                console.error('Clear error:', error);
+                showMessage('Error al limpiar la base de conocimiento', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.add('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = `message ${type} show`;
+        }
+
+        function hideMessage() {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.classList.remove('show');
+        }
+    </script>
+</body>
+</html>
