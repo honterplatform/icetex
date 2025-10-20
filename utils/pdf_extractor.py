@@ -39,9 +39,17 @@ class PDFExtractor:
         # If we got very little text, it's probably a scanned PDF
         if len(text.strip()) < 100:
             print(f"Limited text found ({len(text)} chars). Attempting OCR...")
-            ocr_text = self._extract_with_ocr(pdf_path)
-            if len(ocr_text) > len(text):
-                text = ocr_text
+            try:
+                ocr_text = self._extract_with_ocr(pdf_path)
+                if len(ocr_text) > len(text):
+                    text = ocr_text
+            except Exception as e:
+                print(f"OCR failed: {e}")
+                # If OCR fails, return what we have and add a note
+                if len(text.strip()) == 0:
+                    text = "OCR no disponible. Este PDF parece ser una imagen escaneada. Por favor, use un PDF con texto extraíble o contacte al administrador para configurar OCR."
+                else:
+                    text += f"\n\n[Nota: OCR no disponible - {str(e)}]"
         
         return text.strip()
     
