@@ -64,6 +64,12 @@ class PDFExtractor:
         """Extract text using OCR (for scanned PDFs)."""
         text = ""
         try:
+            # Check if tesseract is available
+            try:
+                pytesseract.get_tesseract_version()
+            except Exception:
+                raise Exception("tesseract is not installed or it's not in your PATH. See README file for more information.")
+            
             # Convert PDF to images
             images = convert_from_path(pdf_path, dpi=300)
             
@@ -78,7 +84,11 @@ class PDFExtractor:
             print(f"Extracted {len(text)} characters using OCR")
         except Exception as e:
             print(f"Error extracting with OCR: {e}")
-            raise Exception(f"OCR extraction failed: {str(e)}. Make sure Tesseract and Poppler are installed.")
+            # Provide more helpful error message
+            if "tesseract" in str(e).lower():
+                raise Exception(f"OCR extraction failed: {str(e)}. Make sure Tesseract and Poppler are installed.")
+            else:
+                raise Exception(f"OCR extraction failed: {str(e)}")
         
         return text
     
