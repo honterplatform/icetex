@@ -5,7 +5,8 @@ Uses GPT-4 to classify petitions into the appropriate ICETEX dependency.
 
 import os
 import json
-from typing import Dict, Any
+import re
+from typing import Dict, Any, List
 from dotenv import load_dotenv
 
 # Import OpenAI - force legacy API to avoid compatibility issues
@@ -103,6 +104,12 @@ IMPORTANTE: TODAS las respuestas deben estar en español. El campo "motivo" debe
             }
         
         try:
+            # Check if text is too large (rough estimate: 1 token ≈ 4 characters)
+            estimated_tokens = len(petition_text) // 4
+            if estimated_tokens > 25000:  # Leave room for system prompt and response
+                print(f"Text too large ({estimated_tokens} estimated tokens). Summarizing...")
+                petition_text = self._summarize_large_text(petition_text)
+            
             # Build enhanced system prompt with knowledge base context
             system_prompt = self.SYSTEM_PROMPT
             
@@ -165,4 +172,80 @@ IMPORTANTE: TODAS las respuestas deben estar en español. El campo "motivo" debe
                 "text_preview": petition_text[:200] + "..." if len(petition_text) > 200 else petition_text
             }
         }
+    
+    def _summarize_large_text(self, text: str) -> str:
+        """Summarize large text to fit within token limits."""
+        try:
+            # Split text into chunks
+            chunks = self._split_text_into_chunks(text, max_chunk_size=15000)
+            
+            if len(chunks) == 1:
+                # Single chunk, summarize directly
+                return self._summarize_chunk(chunks[0])
+            
+            # Multiple chunks, summarize each and combine
+            summarized_chunks = []
+            for i, chunk in enumerate(chunks):
+                print(f"Summarizing chunk {i+1}/{len(chunks)}...")
+                summarized_chunk = self._summarize_chunk(chunk)
+                summarized_chunks.append(summarized_chunk)
+            
+            # Combine summarized chunks
+            combined_summary = "\n\n".join(summarized_chunks)
+            
+            # If still too large, summarize the combined summary
+            if len(combined_summary) > 20000:
+                return self._summarize_chunk(combined_summary)
+            
+            return combined_summary
+            
+        except Exception as e:
+            print(f"Error summarizing text: {e}")
+            # Fallback: return first part of text
+            return text[:20000] + "\n\n[Texto truncado por límite de tokens]"
+    
+    def _split_text_into_chunks(self, text: str, max_chunk_size: int = 15000) -> List[str]:
+        """Split text into chunks of approximately max_chunk_size characters."""
+        chunks = []
+        current_chunk = ""
+        
+        # Split by paragraphs first
+        paragraphs = text.split('\n\n')
+        
+        for paragraph in paragraphs:
+            if len(current_chunk) + len(paragraph) <= max_chunk_size:
+                current_chunk += paragraph + '\n\n'
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = paragraph + '\n\n'
+        
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        
+        return chunks
+    
+    def _summarize_chunk(self, chunk: str) -> str:
+        """Summarize a single chunk of text."""
+        try:
+            summary_prompt = """Resume el siguiente texto de una petición a ICETEX, manteniendo solo la información esencial para clasificar la dependencia apropiada. 
+            Incluye: tipo de solicitud, motivo principal, datos del solicitante, y cualquier detalle relevante para la clasificación.
+            Mantén el resumen en español y conciso pero completo."""
+            
+            response = self.client.ChatCompletion.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": summary_prompt},
+                    {"role": "user", "content": f"Resume esta petición:\n\n{chunk}"}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            
+            return response.choices[0].message.content.strip()
+            
+        except Exception as e:
+            print(f"Error summarizing chunk: {e}")
+            # Fallback: return first part of chunk
+            return chunk[:1000] + "..."
 
