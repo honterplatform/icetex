@@ -423,6 +423,50 @@ async def api_search(q: str = Query(..., description="Search term (name or ID)")
         )
 
 
+@app.get("/api/suggestions")
+async def get_suggestions(q: str = Query(..., description="Partial search term (minimum 2 characters)"), limit: int = Query(10, description="Maximum number of suggestions")):
+    """
+    Get autocomplete suggestions based on partial search term.
+    
+    Args:
+        q: Partial search term (minimum 2 characters)
+        limit: Maximum number of suggestions to return
+        
+    Returns:
+        JSON response with suggestions list
+    """
+    if not q or len(q.strip()) < 2:
+        return {
+            "suggestions": [],
+            "query": q
+        }
+    
+    try:
+        search_util = get_excel_search()
+        suggestions = search_util.get_suggestions(q.strip(), limit=limit)
+        
+        return {
+            "query": q,
+            "suggestions": suggestions,
+            "count": len(suggestions)
+        }
+    except HTTPException:
+        raise
+    except FileNotFoundError as e:
+        return {
+            "suggestions": [],
+            "query": q,
+            "error": "Excel file not found"
+        }
+    except Exception as e:
+        # Don't fail on suggestions, just return empty
+        return {
+            "suggestions": [],
+            "query": q,
+            "error": str(e)
+        }
+
+
 @app.get("/api/excel-info")
 async def get_excel_info():
     """

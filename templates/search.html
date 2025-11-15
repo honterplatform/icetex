@@ -19,16 +19,42 @@
             background: #ffffff;
             min-height: 100vh;
             padding: 20px;
+            margin: 0;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: align-items 0.3s ease;
+        }
+        
+        body.results-shown {
+            align-items: flex-start;
+            padding-top: 20px;
+        }
+        
+        @media (min-width: 1620px) {
+            body {
+                padding: 20px 40px;
+            }
+            
+            body.results-shown {
+                padding-top: 20px;
+            }
         }
 
         .container {
-            max-width: 1400px;
+            width: 100%;
+            max-width: 1600px;
             margin: 0 auto;
+            box-sizing: border-box;
+            padding: 0;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 24px;
+            width: 100%;
         }
 
         .logo-container {
@@ -57,48 +83,105 @@
         }
 
         .search-section {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            padding: 40px;
             margin-bottom: 30px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .search-form {
             display: flex;
             gap: 12px;
             margin-bottom: 20px;
+            position: relative;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            max-width: 600px;
+            width: 100%;
         }
 
         .search-input {
-            flex: 1;
-            padding: 14px 18px;
+            width: 100%;
+            padding: 12px 18px;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             font-size: 16px;
-            font-family: inherit;
+            font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             transition: border-color 0.3s ease;
+            box-sizing: border-box;
         }
 
         .search-input:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: #3366cc;
+        }
+
+        .suggestions-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .suggestions-dropdown.show {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 12px 18px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.2s ease;
+            font-size: 15px;
+            color: #111827;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f9fafb;
+        }
+
+        .suggestion-item.highlighted {
+            background-color: #eff6ff;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .suggestion-item .suggestion-match {
+            font-weight: 600;
+            color: #1d4ed8;
         }
 
         .search-button {
-            padding: 14px 32px;
-            background: #3b82f6;
+            padding: 12px 32px;
+            background: #3366cc;
             color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 500;
+            font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .search-button:hover {
-            background: #2563eb;
+            background: #2952a3;
+            transform: translateY(-1px);
         }
 
         .search-button:disabled {
@@ -134,21 +217,16 @@
 
         .results-section {
             display: none;
+            width: 100%;
         }
 
         .results-section.show {
             display: block;
+            width: 100%;
         }
 
         .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
+            display: none;
         }
 
         .results-count {
@@ -157,49 +235,137 @@
             color: #111827;
         }
 
-        .results-container {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            overflow: hidden;
-        }
 
-        .results-table-wrapper {
-            overflow-x: auto;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .results-table {
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
             width: 100%;
-            border-collapse: collapse;
-            min-width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .results-table th {
-            background: #f9fafb;
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
+        .result-card {
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s ease;
+            height: auto;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: visible;
+        }
+
+
+        .result-card-header {
+            margin-bottom: 0;
+            padding: 12px 0;
             border-bottom: 2px solid #e5e7eb;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
         }
 
-        .results-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f3f4f6;
+        .result-card-title {
+            font-size: 15px;
+            font-weight: 600;
             color: #111827;
+            line-height: 1.4;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            flex: 1;
         }
 
-        .results-table tr:hover {
-            background: #f9fafb;
+        .result-card-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+            white-space: nowrap;
         }
 
-        .results-table tr:last-child td {
-            border-bottom: none;
+        .result-card-body {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 36px 20px;
+            overflow: visible;
+            padding-top: 18px;
+        }
+
+        .result-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .result-field-value {
+            font-size: 14px;
+            color: #111827;
+            word-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.6;
+            overflow: visible;
+            white-space: normal;
+        }
+
+        .result-field-value.empty {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        /* For full-width fields */
+        .result-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Responsive: Card content columns */
+        @media (max-width: 1400px) {
+            .result-card-body {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 1000px) {
+            .result-card-body {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .result-card-body {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+        
+        /* Responsive: Card field columns */
+        @media (max-width: 1400px) {
+            .result-card-body {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 1000px) {
+            .result-card-body {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .result-card-body {
+                grid-template-columns: 1fr;
+            }
         }
 
         .no-results {
@@ -238,24 +404,6 @@
             display: block;
         }
 
-        .nav-links {
-            text-align: center;
-            margin-top: 40px;
-            padding: 20px;
-        }
-
-        .nav-links a {
-            color: #3b82f6;
-            text-decoration: none;
-            margin: 0 16px;
-            font-weight: 500;
-            font-size: 15px;
-        }
-
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
-
         @media (max-width: 768px) {
             .search-form {
                 flex-direction: column;
@@ -282,20 +430,23 @@
             <div class="logo-container">
                 <img src="{{ url_for('static', path='/images/icetex.png') }}" alt="ICETEX Logo" onerror="this.style.display='none'">
             </div>
-            <h1>🔍 Búsqueda de Información</h1>
-            <p class="subtitle">Busca por nombre del contratista, razón social o número de identificación</p>
+            <h1>Búsqueda de Información</h1>
+            <p class="subtitle">Busca por nombre del contratista, razón social o número&nbsp;de&nbsp;identificación</p>
         </div>
 
         <div class="search-section">
             <form class="search-form" id="searchForm">
-                <input 
-                    type="text" 
-                    class="search-input" 
-                    id="searchInput" 
-                    placeholder="Ingresa nombre, razón social o número de identificación..." 
-                    required
-                    autocomplete="off"
-                >
+                <div class="search-input-wrapper">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="searchInput" 
+                        placeholder="Ingresa nombre, razón social o número de identificación..." 
+                        required
+                        autocomplete="off"
+                    >
+                    <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
+                </div>
                 <button type="submit" class="search-button" id="searchButton">
                     Buscar
                 </button>
@@ -313,16 +464,7 @@
             <div class="results-header">
                 <div class="results-count" id="resultsCount"></div>
             </div>
-            <div class="results-container">
-                <div class="results-table-wrapper">
-                    <div id="resultsContent"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="nav-links">
-            <a href="/">Clasificación de Peticiones</a>
-            <a href="/admin">Panel de Administración</a>
+            <div id="resultsContent"></div>
         </div>
     </div>
 
@@ -335,6 +477,11 @@
         const resultsSection = document.getElementById('resultsSection');
         const resultsCount = document.getElementById('resultsCount');
         const resultsContent = document.getElementById('resultsContent');
+        const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+        
+        let suggestionsTimeout = null;
+        let currentSuggestions = [];
+        let selectedSuggestionIndex = -1;
 
         searchForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -348,6 +495,7 @@
             // Reset UI
             hideError();
             hideResults();
+            hideSuggestions(); // Hide suggestions when submitting
             showLoading();
             searchButton.disabled = true;
 
@@ -387,10 +535,12 @@
 
         function showResults() {
             resultsSection.classList.add('show');
+            document.body.classList.add('results-shown');
         }
 
         function hideResults() {
             resultsSection.classList.remove('show');
+            document.body.classList.remove('results-shown');
         }
 
         function displayResults(data) {
@@ -404,7 +554,6 @@
                         <p>Intenta con otro término de búsqueda</p>
                     </div>
                 `;
-                resultsCount.textContent = '0 resultados encontrados';
                 showResults();
                 return;
             }
@@ -414,29 +563,111 @@
             results.forEach(result => {
                 Object.keys(result).forEach(key => allColumns.add(key));
             });
-            const columns = Array.from(allColumns);
-
-            // Build table
-            let tableHTML = '<table class="results-table"><thead><tr>';
-            columns.forEach(column => {
-                tableHTML += `<th>${escapeHtml(column)}</th>`;
-            });
-            tableHTML += '</tr></thead><tbody>';
-
-            results.forEach(result => {
-                tableHTML += '<tr>';
-                columns.forEach(column => {
-                    const value = result[column];
-                    const displayValue = value === null || value === undefined ? '-' : value;
-                    tableHTML += `<td>${escapeHtml(String(displayValue))}</td>`;
+            
+            // Filter out columns that are all empty/null across all results
+            const columns = Array.from(allColumns).filter(col => {
+                const hasAnyValue = results.some(result => {
+                    const value = result[col];
+                    return value !== null && 
+                           value !== undefined && 
+                           value !== '' && 
+                           String(value).toLowerCase().trim() !== 'nan' &&
+                           String(value).toLowerCase().trim() !== 'n/a' &&
+                           String(value).toLowerCase().trim() !== 'na' &&
+                           String(value).toLowerCase().trim() !== '-';
                 });
-                tableHTML += '</tr>';
+                return hasAnyValue;
             });
 
-            tableHTML += '</tbody></table>';
+            // Define important fields to show at the top
+            const importantFields = [
+                'CONTRATISTA : NOMBRE COMPLETO O RAZON SOCIAL',
+                'CONTRATISTA: NÚMERO DE IDENTIFICACIÓN',
+                'No. \nCto',
+                'TIPO DE CONTRATO',
+                'CONTRATISTA:  NOMBRE DEL REPRESENTANTE LEGAL ',
+                'CONTRATISTA:  REPRESENTANTE LEGAL - NÚMERO DE CÉDULA'
+            ];
 
-            resultsContent.innerHTML = tableHTML;
-            resultsCount.textContent = `${results.length} resultado${results.length !== 1 ? 's' : ''} encontrado${results.length !== 1 ? 's' : ''}`;
+            // Separate important and other fields
+            const importantColumns = columns.filter(col => importantFields.includes(col));
+            const otherColumns = columns.filter(col => !importantFields.includes(col));
+
+            // Build card-based grid
+            let gridHTML = '<div class="results-grid">';
+
+            results.forEach((result, index) => {
+                // Get main title (contractor name or contract number)
+                const mainTitle = result['CONTRATISTA : NOMBRE COMPLETO O RAZON SOCIAL'] || 
+                                 result['No. \nCto'] || 
+                                 `Resultado ${index + 1}`;
+                
+                // Get subtitle (ID or contract number)
+                const subtitle = result['CONTRATISTA: NÚMERO DE IDENTIFICACIÓN'] || 
+                                result['No. \nCto'] || 
+                                '';
+
+                let cardHTML = `
+                    <div class="result-card">
+                        <div class="result-card-header">
+                            <div class="result-card-title">${escapeHtml(String(mainTitle))}</div>
+                            ${subtitle ? `<div class="result-card-subtitle">ID: ${escapeHtml(String(subtitle))}</div>` : ''}
+                        </div>
+                        <div class="result-card-body">
+                `;
+
+                // Display important fields first
+                importantColumns.forEach(column => {
+                    const value = result[column];
+                    const isEmpty = !value || 
+                                   String(value).toLowerCase().trim() === 'nan' ||
+                                   String(value).toLowerCase().trim() === 'n/a' ||
+                                   String(value).toLowerCase().trim() === 'na' ||
+                                   String(value).trim() === '';
+                    
+                    if (!isEmpty) {
+                        const displayValue = String(value).trim();
+                        const isLongText = displayValue.length > 100;
+                        cardHTML += `
+                            <div class="result-field ${isLongText ? 'full-width' : ''}">
+                                <div class="result-field-label">${escapeHtml(column)}</div>
+                                <div class="result-field-value">${escapeHtml(displayValue)}</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Display other fields
+                otherColumns.forEach(column => {
+                    const value = result[column];
+                    const isEmpty = !value || 
+                                   String(value).toLowerCase().trim() === 'nan' ||
+                                   String(value).toLowerCase().trim() === 'n/a' ||
+                                   String(value).toLowerCase().trim() === 'na' ||
+                                   String(value).trim() === '';
+                    
+                    if (!isEmpty) {
+                        const displayValue = String(value).trim();
+                        const isLongText = displayValue.length > 100;
+                        cardHTML += `
+                            <div class="result-field ${isLongText ? 'full-width' : ''}">
+                                <div class="result-field-label">${escapeHtml(column)}</div>
+                                <div class="result-field-value">${escapeHtml(displayValue)}</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                cardHTML += `
+                        </div>
+                    </div>
+                `;
+
+                gridHTML += cardHTML;
+            });
+
+            gridHTML += '</div>';
+            resultsContent.innerHTML = gridHTML;
             showResults();
         }
 
@@ -446,9 +677,150 @@
             return div.innerHTML;
         }
 
+        // Fetch suggestions as user types
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.trim();
+            selectedSuggestionIndex = -1;
+            
+            // Clear previous timeout
+            if (suggestionsTimeout) {
+                clearTimeout(suggestionsTimeout);
+            }
+            
+            // Hide suggestions if less than 2 characters
+            if (searchTerm.length < 2) {
+                hideSuggestions();
+                return;
+            }
+            
+            // Debounce: fetch suggestions after 300ms of no typing
+            suggestionsTimeout = setTimeout(async () => {
+                await fetchSuggestions(searchTerm);
+            }, 300);
+        });
+        
+        // Handle keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            if (!suggestionsDropdown.classList.contains('show') || currentSuggestions.length === 0) {
+                if (e.key === 'Enter') {
+                    searchForm.dispatchEvent(new Event('submit'));
+                }
+                return;
+            }
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, currentSuggestions.length - 1);
+                updateSuggestionHighlight();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                updateSuggestionHighlight();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedSuggestionIndex >= 0 && currentSuggestions[selectedSuggestionIndex]) {
+                    selectSuggestion(currentSuggestions[selectedSuggestionIndex]);
+                } else {
+                    searchForm.dispatchEvent(new Event('submit'));
+                }
+            } else if (e.key === 'Escape') {
+                hideSuggestions();
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsDropdown.contains(e.target)) {
+                hideSuggestions();
+            }
+        });
+        
+        async function fetchSuggestions(searchTerm) {
+            if (!searchTerm || searchTerm.length < 2) {
+                hideSuggestions();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/suggestions?q=${encodeURIComponent(searchTerm)}&limit=10`);
+                const data = await response.json();
+                
+                if (data.suggestions && data.suggestions.length > 0) {
+                    currentSuggestions = data.suggestions;
+                    displaySuggestions(data.suggestions, searchTerm);
+                } else {
+                    hideSuggestions();
+                }
+            } catch (error) {
+                console.error('Error fetching suggestions:', error);
+                hideSuggestions();
+            }
+        }
+        
+        function displaySuggestions(suggestions, searchTerm) {
+            if (!suggestions || suggestions.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            
+            const searchTermLower = searchTerm.toLowerCase();
+            let html = '';
+            
+            suggestions.forEach((suggestion, index) => {
+                const suggestionLower = suggestion.toLowerCase();
+                let displayText = escapeHtml(suggestion);
+                
+                // Highlight matching part
+                const matchIndex = suggestionLower.indexOf(searchTermLower);
+                if (matchIndex !== -1) {
+                    const before = escapeHtml(suggestion.substring(0, matchIndex));
+                    const match = escapeHtml(suggestion.substring(matchIndex, matchIndex + searchTerm.length));
+                    const after = escapeHtml(suggestion.substring(matchIndex + searchTerm.length));
+                    displayText = `${before}<span class="suggestion-match">${match}</span>${after}`;
+                }
+                
+                html += `<div class="suggestion-item" data-index="${index}" data-value="${escapeHtml(suggestion)}">${displayText}</div>`;
+            });
+            
+            suggestionsDropdown.innerHTML = html;
+            suggestionsDropdown.classList.add('show');
+            
+            // Add click handlers
+            suggestionsDropdown.querySelectorAll('.suggestion-item').forEach((item) => {
+                item.addEventListener('click', () => {
+                    selectSuggestion(item.getAttribute('data-value'));
+                });
+            });
+        }
+        
+        function updateSuggestionHighlight() {
+            suggestionsDropdown.querySelectorAll('.suggestion-item').forEach((item, index) => {
+                if (index === selectedSuggestionIndex) {
+                    item.classList.add('highlighted');
+                    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                } else {
+                    item.classList.remove('highlighted');
+                }
+            });
+        }
+        
+        function selectSuggestion(suggestion) {
+            searchInput.value = suggestion;
+            hideSuggestions();
+            // Optionally auto-submit or focus on search button
+            searchInput.focus();
+        }
+        
+        function hideSuggestions() {
+            suggestionsDropdown.classList.remove('show');
+            suggestionsDropdown.innerHTML = '';
+            currentSuggestions = [];
+            selectedSuggestionIndex = -1;
+        }
+        
         // Allow Enter key to trigger search
         searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !suggestionsDropdown.classList.contains('show')) {
                 searchForm.dispatchEvent(new Event('submit'));
             }
         });

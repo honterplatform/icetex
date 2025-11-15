@@ -47,7 +47,14 @@ class ExcelSearch:
         try:
             # Try reading as .xlsx first
             if self.excel_file_path.suffix.lower() in ['.xlsx', '.xls']:
-                self.df = pd.read_excel(self.excel_file_path, engine='openpyxl')
+                # Try to read from 'CONTRATOS' sheet first, fallback to first sheet
+                try:
+                    self.df = pd.read_excel(self.excel_file_path, engine='openpyxl', sheet_name='CONTRATOS')
+                    print(f"✅ Loaded Excel from 'CONTRATOS' sheet")
+                except (ValueError, KeyError):
+                    # If CONTRATOS sheet doesn't exist, use first sheet
+                    self.df = pd.read_excel(self.excel_file_path, engine='openpyxl')
+                    print(f"✅ Loaded Excel from first sheet")
             else:
                 # Try CSV as fallback
                 self.df = pd.read_csv(self.excel_file_path)
@@ -182,6 +189,97 @@ class ExcelSearch:
         if self.df is None:
             return []
         return self.df.columns.tolist()
+    
+    def get_suggestions(
+        self, 
+        search_term: str, 
+        limit: int = 10,
+        name_columns: Optional[List[str]] = None,
+        id_columns: Optional[List[str]] = None
+    ) -> List[str]:
+        """
+        Get autocomplete suggestions based on partial search term.
+        Returns unique suggestions from name and ID columns.
+        
+        Args:
+            search_term: Partial search term (minimum 2 characters)
+            limit: Maximum number of suggestions to return
+            name_columns: List of column names to search in for names
+            id_columns: List of column names to search in for IDs
+            
+        Returns:
+            List of unique suggestion strings
+        """
+        if self.df is None or self.df.empty or len(search_term.strip()) < 2:
+            return []
+        
+        # Auto-detect columns if not provided
+        if name_columns is None:
+            name_columns = self._detect_name_columns()
+        
+        if id_columns is None:
+            id_columns = self._detect_id_columns()
+        
+        search_term_lower = search_term.lower().strip()
+        suggestions = set()  # Use set to avoid duplicates
+        
+        # Get suggestions from name columns
+        for col in name_columns:
+            if col in self.df.columns:
+                # Get unique values that match
+                matches = self.df[col].astype(str).str.lower().str.contains(
+                    search_term_lower, na=False, regex=False
+                )
+                matched_values = self.df.loc[matches, col].dropna().unique()
+                
+                for value in matched_values:
+                    value_str = str(value).strip()
+                    # Ignore empty fields, NaN, None, and common empty indicators
+                    if (value_str and 
+                        len(value_str) > 0 and 
+                        value_str.lower() not in ['nan', 'none', 'n/a', 'na', '', '-'] and
+                        not pd.isna(value) and
+                        value != 'NaN'):
+                        suggestions.add(value_str)
+                        if len(suggestions) >= limit:
+                            break
+            
+            if len(suggestions) >= limit:
+                break
+        
+        # Get suggestions from ID columns
+        if len(suggestions) < limit:
+            for col in id_columns:
+                if col in self.df.columns:
+                    matches = self.df[col].astype(str).str.lower().str.contains(
+                        search_term_lower, na=False, regex=False
+                    )
+                    matched_values = self.df.loc[matches, col].dropna().unique()
+                    
+                    for value in matched_values:
+                        value_str = str(value).strip()
+                        # Ignore empty fields, NaN, None, and common empty indicators
+                        if (value_str and 
+                            len(value_str) > 0 and 
+                            value_str.lower() not in ['nan', 'none', 'n/a', 'na', '', '-'] and
+                            not pd.isna(value) and
+                            value != 'NaN'):
+                            suggestions.add(value_str)
+                            if len(suggestions) >= limit:
+                                break
+                
+                if len(suggestions) >= limit:
+                    break
+        
+        # Convert to list and sort (prioritize shorter matches and exact starts)
+        suggestions_list = list(suggestions)
+        suggestions_list.sort(key=lambda x: (
+            not x.lower().startswith(search_term_lower),  # Exact starts first
+            len(x),  # Shorter matches first
+            x.lower()  # Alphabetical
+        ))
+        
+        return suggestions_list[:limit]
     
     def get_info(self) -> Dict[str, Any]:
         """Get information about the loaded Excel file."""
