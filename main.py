@@ -6,7 +6,7 @@ Receives PDF petitions, extracts text, and classifies them using OpenAI API.
 import os
 import tempfile
 from typing import Optional
-from fastapi import FastAPI, File, UploadFile, Request, HTTPException
+from fastapi import FastAPI, File, UploadFile, Request, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from utils.pdf_extractor import PDFExtractor
 from utils.openai_classifier import ICETEXClassifier
 from utils.knowledge_base import ICETEXKnowledgeBase
+from utils.excel_search import ExcelSearch
 
 # Load environment variables
 load_dotenv()
@@ -36,6 +37,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 pdf_extractor = PDFExtractor()
 knowledge_base = ICETEXKnowledgeBase()
 openai_classifier = None  # Will be initialized when API key is available
+excel_search = None  # Will be initialized when needed
 
 
 def get_classifier() -> ICETEXClassifier:
@@ -59,6 +61,33 @@ def get_classifier() -> ICETEXClassifier:
     return openai_classifier
 
 
+def get_excel_search() -> ExcelSearch:
+    """Get or initialize the Excel search utility."""
+    global excel_search
+    if excel_search is None:
+        try:
+            # You can specify the path to your Excel file via environment variable
+            # Default is 'data/contratos_icetex.xlsx' in project root
+            excel_path = os.getenv("EXCEL_FILE_PATH", None)
+            excel_search = ExcelSearch(excel_path)
+            print(f"✅ Excel search utility initialized")
+        except FileNotFoundError as e:
+            print(f"⚠️ Warning: Excel file not found: {e}")
+            # Extract user-friendly message from the exception
+            error_msg = str(e) if "Excel file not found" in str(e) else "Excel file not found."
+            raise HTTPException(
+                status_code=404,
+                detail=f"{error_msg}"
+            )
+        except Exception as e:
+            print(f"⚠️ Warning: Could not initialize Excel search: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error initializing Excel search: {str(e)}"
+            )
+    return excel_search
+
+
 @app.get("/", response_class=HTMLResponse)
 async def upload_form(request: Request):
     """
@@ -73,6 +102,14 @@ async def admin_panel(request: Request):
     Display the admin panel for managing the knowledge base.
     """
     return templates.TemplateResponse("admin.html", {"request": request})
+
+
+@app.get("/search", response_class=HTMLResponse)
+async def search_page(request: Request):
+    """
+    Display the search page for searching by name or ID.
+    """
+    return templates.TemplateResponse("search.html", {"request": request})
 
 
 @app.post("/classify")
@@ -341,6 +378,69 @@ async def clear_knowledge_base():
         raise HTTPException(
             status_code=500,
             detail=f"Error clearing knowledge base: {str(e)}"
+        )
+
+
+@app.get("/api/search")
+async def api_search(q: str = Query(..., description="Search term (name or ID)")):
+    """
+    Search for records by name or ID in the Excel file.
+    
+    Args:
+        q: Search term (name or ID)
+        
+    Returns:
+        JSON response with matching records
+    """
+    if not q or not q.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Query parameter 'q' is required"
+        )
+    
+    try:
+        search_util = get_excel_search()
+        results = search_util.search_by_name_or_id(q.strip())
+        
+        return {
+            "query": q,
+            "results": results,
+            "count": len(results)
+        }
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except FileNotFoundError as e:
+        error_msg = str(e) if "Excel file not found" in str(e) else "Excel file not found."
+        raise HTTPException(
+            status_code=404,
+            detail=f"{error_msg}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error searching: {str(e)}"
+        )
+
+
+@app.get("/api/excel-info")
+async def get_excel_info():
+    """
+    Get information about the loaded Excel file.
+    
+    Returns:
+        JSON response with file information
+    """
+    try:
+        search_util = get_excel_search()
+        info = search_util.get_info()
+        return info
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting Excel info: {str(e)}"
         )
 
 

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICETEX - Búsqueda de Información</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Satoshi:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .logo-container img {
+            max-width: 180px;
+            height: auto;
+        }
+
+        h1 {
+            color: #111827;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 15px;
+            line-height: 1.5;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .search-button {
+            padding: 14px 32px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .search-button:hover {
+            background: #2563eb;
+        }
+
+        .search-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .results-count {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .results-container {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .results-table-wrapper {
+            overflow-x: auto;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 100%;
+        }
+
+        .results-table th {
+            background: #f9fafb;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .results-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #111827;
+        }
+
+        .results-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .results-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .no-results-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .no-results h3 {
+            color: #111827;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .no-results p {
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .nav-links a {
+            color: #3b82f6;
+            text-decoration: none;
+            margin: 0 16px;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .search-form {
+                flex-direction: column;
+            }
+
+            .search-button {
+                width: 100%;
+            }
+
+            .results-table-wrapper {
+                font-size: 14px;
+            }
+
+            .results-table th,
+            .results-table td {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <img src="{{ url_for('static', path='/images/icetex.png') }}" alt="ICETEX Logo" onerror="this.style.display='none'">
+            </div>
+            <h1>🔍 Búsqueda de Información</h1>
+            <p class="subtitle">Busca por nombre del contratista, razón social o número de identificación</p>
+        </div>
+
+        <div class="search-section">
+            <form class="search-form" id="searchForm">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="Ingresa nombre, razón social o número de identificación..." 
+                    required
+                    autocomplete="off"
+                >
+                <button type="submit" class="search-button" id="searchButton">
+                    Buscar
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Buscando información...</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="results-count" id="resultsCount"></div>
+            </div>
+            <div class="results-container">
+                <div class="results-table-wrapper">
+                    <div id="resultsContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-links">
+            <a href="/">Clasificación de Peticiones</a>
+            <a href="/admin">Panel de Administración</a>
+        </div>
+    </div>
+
+    <script>
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsCount = document.getElementById('resultsCount');
+        const resultsContent = document.getElementById('resultsContent');
+
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const searchTerm = searchInput.value.trim();
+            if (!searchTerm) {
+                showError('Por favor ingresa un término de búsqueda');
+                return;
+            }
+
+            // Reset UI
+            hideError();
+            hideResults();
+            showLoading();
+            searchButton.disabled = true;
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(searchTerm)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Error en la búsqueda');
+                }
+
+                displayResults(data);
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+                searchButton.disabled = false;
+            }
+        });
+
+        function showLoading() {
+            loading.classList.add('show');
+        }
+
+        function hideLoading() {
+            loading.classList.remove('show');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function showResults() {
+            resultsSection.classList.add('show');
+        }
+
+        function hideResults() {
+            resultsSection.classList.remove('show');
+        }
+
+        function displayResults(data) {
+            const results = data.results || [];
+
+            if (results.length === 0) {
+                resultsContent.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <h3>No se encontraron resultados</h3>
+                        <p>Intenta con otro término de búsqueda</p>
+                    </div>
+                `;
+                resultsCount.textContent = '0 resultados encontrados';
+                showResults();
+                return;
+            }
+
+            // Get all unique column names from all results
+            const allColumns = new Set();
+            results.forEach(result => {
+                Object.keys(result).forEach(key => allColumns.add(key));
+            });
+            const columns = Array.from(allColumns);
+
+            // Build table
+            let tableHTML = '<table class="results-table"><thead><tr>';
+            columns.forEach(column => {
+                tableHTML += `<th>${escapeHtml(column)}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+
+            results.forEach(result => {
+                tableHTML += '<tr>';
+                columns.forEach(column => {
+                    const value = result[column];
+                    const displayValue = value === null || value === undefined ? '-' : value;
+                    tableHTML += `<td>${escapeHtml(String(displayValue))}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+
+            resultsContent.innerHTML = tableHTML;
+            resultsCount.textContent = `${results.length} resultado${results.length !== 1 ? 's' : ''} encontrado${results.length !== 1 ? 's' : ''}`;
+            showResults();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to trigger search
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
+
