@@ -41,11 +41,12 @@ class PDFGenerator:
         # Container for the 'Flowable' objects
         story = []
         
-        # Add ICETEX logo at the top
+        # Add ICETEX logo at the top - left aligned
         logo_path = Path(__file__).parent.parent / "static" / "images" / "icetex.png"
         if logo_path.exists():
             try:
                 logo = Image(str(logo_path), width=2*inch, height=0.6*inch)
+                logo.hAlign = 'LEFT'
                 story.append(logo)
                 story.append(Spacer(1, 0.3*inch))
             except Exception:
