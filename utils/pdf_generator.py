@@ -4,14 +4,13 @@ PDF generator utility for creating PDFs from Excel search results.
 
 from io import BytesIO
 from typing import Dict, Any, List
-from reportlab.lib.pagesizes import letter, A4
+from pathlib import Path
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak
+from reportlab.lib.enums import TA_LEFT
 
 
 class PDFGenerator:
@@ -42,62 +41,87 @@ class PDFGenerator:
         # Container for the 'Flowable' objects
         story = []
         
-        # Define styles
+        # Add ICETEX logo at the top
+        logo_path = Path(__file__).parent.parent / "static" / "images" / "icetex.png"
+        if logo_path.exists():
+            try:
+                logo = Image(str(logo_path), width=2*inch, height=0.6*inch)
+                story.append(logo)
+                story.append(Spacer(1, 0.3*inch))
+            except Exception:
+                # If image fails to load, continue without logo
+                pass
+        
+        # Define styles - using Helvetica (similar to Satoshi) since it's built-in to ReportLab
+        # For true Satoshi font, you would need to download TTF files and register them
         styles = getSampleStyleSheet()
         
-        # Title style
+        # Title style - left aligned
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=20,
             textColor=colors.HexColor('#111827'),
-            spaceAfter=30,
-            alignment=TA_CENTER,
+            spaceAfter=20,
+            alignment=TA_LEFT,
             fontName='Helvetica-Bold'
         )
         
-        # Header style
+        # Header style - left aligned
         header_style = ParagraphStyle(
             'CustomHeader',
             parent=styles['Heading2'],
             fontSize=16,
             textColor=colors.HexColor('#111827'),
-            spaceAfter=12,
+            spaceAfter=10,
             spaceBefore=20,
+            alignment=TA_LEFT,
             fontName='Helvetica-Bold'
         )
         
-        # Label style
+        # Label style - left aligned, bold
         label_style = ParagraphStyle(
             'CustomLabel',
             parent=styles['Normal'],
-            fontSize=10,
+            fontSize=11,
             textColor=colors.HexColor('#6b7280'),
             spaceAfter=4,
+            spaceBefore=0,
+            alignment=TA_LEFT,
             fontName='Helvetica-Bold'
         )
         
-        # Value style
+        # Value style - left aligned, regular weight
         value_style = ParagraphStyle(
             'CustomValue',
             parent=styles['Normal'],
             fontSize=11,
             textColor=colors.HexColor('#111827'),
-            spaceAfter=12,
-            leftIndent=20
+            spaceAfter=16,
+            leftIndent=0,
+            alignment=TA_LEFT,
+            fontName='Helvetica'
         )
         
-        # Add title
+        # Add title - left aligned
         title = Paragraph("ICETEX - Información de Contratista", title_style)
         story.append(title)
-        story.append(Spacer(1, 0.2*inch))
+        story.append(Spacer(1, 0.25*inch))
         
-        # Add search query info
-        query_text = Paragraph(f"<b>Búsqueda realizada:</b> {self._escape_html(query)}", styles['Normal'])
+        # Add search query info - left aligned
+        query_style = ParagraphStyle(
+            'QueryStyle',
+            parent=styles['Normal'],
+            fontSize=11,
+            alignment=TA_LEFT,
+            fontName='Helvetica',
+            textColor=colors.HexColor('#111827'),
+            spaceAfter=6
+        )
+        query_text = Paragraph(f"<b>Búsqueda realizada:</b> {self._escape_html(query)}", query_style)
         story.append(query_text)
-        story.append(Spacer(1, 0.1*inch))
         
-        results_count = Paragraph(f"<b>Resultados encontrados:</b> {len(results)}", styles['Normal'])
+        results_count = Paragraph(f"<b>Resultados encontrados:</b> {len(results)}", query_style)
         story.append(results_count)
         story.append(Spacer(1, 0.3*inch))
         
@@ -114,12 +138,20 @@ class PDFGenerator:
             subtitle = result.get('CONTRATISTA: NÚMERO DE IDENTIFICACIÓN', 
                                 result.get('No. \\nCto', ''))
             if subtitle:
-                id_text = Paragraph(f"<b>ID:</b> {self._escape_html(str(subtitle))}", styles['Normal'])
+                id_style = ParagraphStyle(
+                    'IdStyle',
+                    parent=styles['Normal'],
+                    fontSize=11,
+                    alignment=TA_LEFT,
+                    fontName='Helvetica',
+                    textColor=colors.HexColor('#111827'),
+                    spaceAfter=12
+                )
+                id_text = Paragraph(f"<b>ID:</b> {self._escape_html(str(subtitle))}", id_style)
                 story.append(id_text)
-                story.append(Spacer(1, 0.1*inch))
             
-            # Add divider line
-            story.append(Spacer(1, 0.05*inch))
+            # Add spacing before fields
+            story.append(Spacer(1, 0.15*inch))
             
             # Get all non-empty fields
             fields = []
@@ -136,36 +168,16 @@ class PDFGenerator:
                 
                 fields.append((formatted_key, formatted_value))
             
-            # Create table for fields
+            # Display fields in organized list format (no table)
             if fields:
-                # Create data for table
-                table_data = []
                 for key, value in fields:
-                    # ReportLab's Paragraph will handle text wrapping automatically
-                    # We just need to escape HTML and let it wrap naturally
-                    table_data.append([
-                        Paragraph(f"<b>{self._escape_html(key)}</b>", label_style),
-                        Paragraph(self._escape_html(str(value)), value_style)
-                    ])
-                
-                # Create table
-                table = Table(table_data, colWidths=[2.5*inch, 4.5*inch])
-                table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f9fafb')),
-                    ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-                    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-                    ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-                    ('TOPPADDING', (0, 0), (-1, -1), 8),
-                    ('LEFTPADDING', (0, 0), (0, -1), 12),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
-                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                ]))
-                
-                story.append(table)
+                    # Add label (bold, gray)
+                    label = Paragraph(f"<b>{self._escape_html(key)}</b>", label_style)
+                    story.append(label)
+                    
+                    # Add value (regular, black) - will wrap automatically
+                    value_para = Paragraph(self._escape_html(str(value)), value_style)
+                    story.append(value_para)
             
             # Add page break between results (except for the last one)
             if idx < len(results):
