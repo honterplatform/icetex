@@ -7,7 +7,7 @@ import os
 import tempfile
 from typing import Optional
 from fastapi import FastAPI, File, UploadFile, Request, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -16,6 +16,7 @@ from utils.pdf_extractor import PDFExtractor
 from utils.openai_classifier import ICETEXClassifier
 from utils.knowledge_base import ICETEXKnowledgeBase
 from utils.excel_search import ExcelSearch
+from utils.pdf_generator import PDFGenerator
 
 # Load environment variables
 load_dotenv()
@@ -485,6 +486,64 @@ async def get_excel_info():
         raise HTTPException(
             status_code=500,
             detail=f"Error getting Excel info: {str(e)}"
+        )
+
+
+@app.get("/api/download-pdf")
+async def download_pdf(q: str = Query(..., description="Search term (name or ID)")):
+    """
+    Generate and download a PDF with search results.
+    
+    Args:
+        q: Search term (name or ID)
+        
+    Returns:
+        PDF file as response
+    """
+    if not q or not q.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Query parameter 'q' is required"
+        )
+    
+    try:
+        # Get search results
+        search_util = get_excel_search()
+        results = search_util.search_by_name_or_id(q.strip())
+        
+        if not results:
+            raise HTTPException(
+                status_code=404,
+                detail="No results found for the given search term"
+            )
+        
+        # Generate PDF
+        pdf_generator = PDFGenerator()
+        pdf_buffer = pdf_generator.generate_result_pdf(results, q.strip())
+        
+        # Generate filename
+        filename = f"icetex_contratista_{q.strip().replace(' ', '_')[:50]}.pdf"
+        
+        # Return PDF as response
+        return Response(
+            content=pdf_buffer.read(),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except HTTPException:
+        raise
+    except FileNotFoundError as e:
+        error_msg = str(e) if "Excel file not found" in str(e) else "Excel file not found."
+        raise HTTPException(
+            status_code=404,
+            detail=f"{error_msg}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating PDF: {str(e)}"
         )
 
 
